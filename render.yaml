@@ -7,8 +7,6 @@ services:
     buildCommand: npm ci && npm run db:generate
     startCommand: npm run start:api
     healthCheckPath: /api/health
-    domains:
-      - api.mlima.supplier.com
     envVars:
       - key: NODE_VERSION
         value: 22.16.0
@@ -17,11 +15,11 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://api.mlima.supplier.com
+        value: https://mlima-supplier-api.onrender.com
       - key: WEB_ORIGIN
-        value: https://mlima.supplier.com
+        value: https://mlima-supplier.vercel.app
       - key: WEB_ORIGINS
-        value: https://mlima.supplier.com
+        value: https://mlima-supplier.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL

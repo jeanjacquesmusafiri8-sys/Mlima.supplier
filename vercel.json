@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://api.mlima.supplier.com/api/:path*"
+      "destination": "https://mlima-supplier-api.onrender.com/api/:path*"
     }
   ]
 }
