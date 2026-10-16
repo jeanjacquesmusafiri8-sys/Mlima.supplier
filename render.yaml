@@ -15,7 +15,7 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://mlima-supplier.onrender.com
+        value: https://mlima-supplier.vercel.app
       - key: WEB_ORIGIN
         value: https://mlima-supplier.vercel.app
       - key: WEB_ORIGINS

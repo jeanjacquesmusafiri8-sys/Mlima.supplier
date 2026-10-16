@@ -18,7 +18,7 @@ if (configuredAdminEmail && configuredAdminEmail !== superAdminEmail) {
 const configuredAuthBaseURL = process.env.BETTER_AUTH_URL?.trim();
 if (process.env.NODE_ENV === "production" && !configuredAuthBaseURL) {
   throw new Error(
-    "BETTER_AUTH_URL must be set to the public API URL in production.",
+    "BETTER_AUTH_URL must be set to the public authentication URL in production.",
   );
 }
 const authBaseURL = configuredAuthBaseURL || "http://localhost:3001";

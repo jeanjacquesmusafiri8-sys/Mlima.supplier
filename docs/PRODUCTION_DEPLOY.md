@@ -23,7 +23,7 @@ Le nom du projet Vercel et le service Render actif sont `mlima-supplier`. Si une
 
 1. Créez un Web Service depuis le même dépôt, ou utilisez le Blueprint `render.yaml`.
 2. Gardez la branche `main`, la région Frankfurt et le plan `starter` définis dans le Blueprint. La création d’un sous-domaine `onrender.com` ne requiert pas l’achat d’un domaine; le plan d’hébergement Render peut toutefois être payant.
-3. Le Blueprint configure le build, la commande de démarrage, le health check, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_ORIGIN` et `WEB_ORIGINS`.
+3. Le Blueprint configure le build, la commande de démarrage, le health check, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_ORIGIN` et `WEB_ORIGINS`. `BETTER_AUTH_URL` doit être l’origine Vercel `https://mlima-supplier.vercel.app`, car le flux OAuth doit démarrer et revenir sur cette même origine pour conserver le cookie d’état. Le rewrite Vercel transmet le callback à Render.
 4. Dans l’onglet Environment du service, fournissez les vraies valeurs pour :
    - `DATABASE_URL` : URL Neon avec pooling, pour les requêtes de l’application.
    - `DIRECT_URL` : URL directe Neon, utilisée pour les migrations Prisma.
@@ -45,9 +45,9 @@ La migration `20261017000000_remove_delivery_addresses` supprime les colonnes hi
 Dans les identifiants OAuth Google, configurez :
 
 - Origine JavaScript autorisée : `https://mlima-supplier.vercel.app`
-- URI de redirection autorisée : `https://mlima-supplier.onrender.com/api/auth/callback/google`
+- URI de redirection autorisée : `https://mlima-supplier.vercel.app/api/auth/callback/google`
 
-Le callback appartient au domaine API Render, car Better Auth y est hébergé. Les URL doivent correspondre exactement aux valeurs publiques des deux plateformes.
+Dans Render > service `mlima-supplier` > Environment, définissez aussi `BETTER_AUTH_URL=https://mlima-supplier.vercel.app`, puis redéployez le service. Le navigateur recevra le cookie OAuth sur Vercel lors de l’initiation et le renverra au callback Vercel; le rewrite `/api/*` relaie ensuite cette requête à l’API Render. Cette origine unique évite l’erreur `state_mismatch`. Les URL autorisées chez Google doivent correspondre exactement.
 
 ## Vérifications après déploiement
 
