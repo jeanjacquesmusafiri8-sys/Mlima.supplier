@@ -1,10 +1,11 @@
-const CACHE_NAME = 'mlima-shell-v1';
+const CACHE_NAME = 'mlima-shell-v2';
 const SHELL_URLS = [
   '/',
   '/manifest.webmanifest',
   '/Logo_officiel.png',
-  '/icons/mlima-192.png',
-  '/icons/mlima-512.png',
+  '/logo-officiel.svg?v=2',
+  '/icons/mlima-192.png?v=2',
+  '/icons/mlima-512.png?v=2',
 ];
 const PUBLIC_API_PREFIXES = ['/api/products', '/api/categories', '/api/settings'];
 
