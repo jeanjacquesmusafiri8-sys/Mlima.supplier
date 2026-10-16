@@ -62,6 +62,7 @@ export interface Product {
   isFeatured: boolean;
   isNew: boolean;
   isActive: boolean;
+  isPublic?: boolean;
   brand?: string;
   rating?: number;
   reviewsCount?: number;

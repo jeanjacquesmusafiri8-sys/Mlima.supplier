@@ -70,6 +70,7 @@ model User {
   orders        Order[]
   cartItems     CartItem[]
   auditLogs     AuditLog[]
+  notifications UserNotification[]
 
   @@map("user")
 }
@@ -331,4 +332,17 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+model UserNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+
+  @@index([userId, createdAt])
+  @@map("user_notifications")
 }

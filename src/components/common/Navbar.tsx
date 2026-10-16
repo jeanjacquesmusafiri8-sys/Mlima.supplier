@@ -34,7 +34,8 @@ interface NavbarProps {
   isAdminMode: boolean;
   onToggleAdminMode: () => void;
   currentUser: UserProfile | null;
-  onOpenAuthModal: (tab?: 'login' | 'register') => void;
+  notificationMenu?: React.ReactNode;
+  onOpenAuthModal: (tab?: "login" | "register") => void;
   onOpenBillingProfile: () => void;
   onOpenSecurityModal?: () => void;
   onLogout: () => void;
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isAdminMode,
   onToggleAdminMode,
   currentUser,
+  notificationMenu,
   onOpenAuthModal,
   onOpenBillingProfile,
   onOpenSecurityModal,
@@ -66,15 +68,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setUserDropdownOpen(false);
       }
-      if (catDropdownRef.current && !catDropdownRef.current.contains(event.target as Node)) {
+      if (
+        catDropdownRef.current &&
+        !catDropdownRef.current.contains(event.target as Node)
+      ) {
         setCategoriesDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const selectedCatObj = categories.find((c) => c.id === selectedCategory);
@@ -88,19 +96,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => {
-                onSelectCategory('all');
+                onSelectCategory("all");
                 if (isAdminMode) onToggleAdminMode();
               }}
               className="group flex items-center gap-2 cursor-pointer focus:outline-none text-left"
               aria-label="Accueil MLIMA Supplier"
             >
-               <div className="flex items-center gap-3">
-              <img
-                src="/Logo_officiel.png"
-                alt="MLIMA Supplier"
-                className="h-12 w-[68px] object-contain"
-              />
-            </div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/Logo_officiel.png"
+                  alt="MLIMA Supplier"
+                  className="h-12 w-[68px] object-contain"
+                />
+              </div>
             </button>
           </div>
 
@@ -108,14 +116,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden md:flex flex-1 max-w-2xl items-center">
             <div className="relative w-full flex items-center bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white rounded-full border border-slate-200 focus-within:border-[#0A3B8C] focus-within:ring-4 focus-within:ring-[#0A3B8C]/10 transition-all shadow-xs overflow-hidden">
               {/* Sélecteur de rayon intégré */}
-              <div className="relative shrink-0 border-r border-slate-200/80 bg-transparent" ref={catDropdownRef}>
+              <div
+                className="relative shrink-0 border-r border-slate-200/80 bg-transparent"
+                ref={catDropdownRef}
+              >
                 <button
                   type="button"
-                  onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}
+                  onClick={() =>
+                    setCategoriesDropdownOpen(!categoriesDropdownOpen)
+                  }
                   className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:text-[#0A3B8C] cursor-pointer focus:outline-none"
                 >
                   <span className="truncate max-w-[130px]">
-                    {selectedCatObj ? selectedCatObj.name : 'Tous les rayons'}
+                    {selectedCatObj ? selectedCatObj.name : "Tous les rayons"}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 </button>
@@ -125,17 +138,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="absolute left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <button
                       onClick={() => {
-                        onSelectCategory('all');
+                        onSelectCategory("all");
                         setCategoriesDropdownOpen(false);
                       }}
                       className={`w-full px-4 py-2 text-left text-xs font-semibold flex items-center justify-between cursor-pointer ${
-                        selectedCategory === 'all'
-                          ? 'bg-blue-50 text-[#0A3B8C]'
-                          : 'text-slate-700 hover:bg-slate-50'
+                        selectedCategory === "all"
+                          ? "bg-blue-50 text-[#0A3B8C]"
+                          : "text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       <span>Tous les rayons</span>
-                      {selectedCategory === 'all' && <span className="w-1.5 h-1.5 rounded-full bg-[#0A3B8C]" />}
+                      {selectedCategory === "all" && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#0A3B8C]" />
+                      )}
                     </button>
                     <div className="my-1 border-t border-slate-100" />
                     {categories.map((cat) => (
@@ -147,12 +162,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className={`w-full px-4 py-2 text-left text-xs font-medium flex items-center justify-between cursor-pointer ${
                           selectedCategory === cat.id
-                            ? 'bg-blue-50 text-[#0A3B8C] font-semibold'
-                            : 'text-slate-700 hover:bg-slate-50'
+                            ? "bg-blue-50 text-[#0A3B8C] font-semibold"
+                            : "text-slate-700 hover:bg-slate-50"
                         }`}
                       >
                         <span className="truncate">{cat.name}</span>
-                        {selectedCategory === cat.id && <span className="w-1.5 h-1.5 rounded-full bg-[#0A3B8C]" />}
+                        {selectedCategory === cat.id && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A3B8C]" />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -170,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => onSearchChange('')}
+                    onClick={() => onSearchChange("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -191,6 +208,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* 3. Actions Utilisateur & Commandes (Côté Droit) */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {notificationMenu}
+
             {/* Bouton Commande / Devis B2B */}
             <button
               onClick={onOpenCart}
@@ -204,7 +223,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {cartCount}
                 </span>
               ) : (
-                <span className="text-[10px] text-blue-200 hidden lg:inline">0 article</span>
+                <span className="text-[10px] text-blue-200 hidden lg:inline">
+                  0 article
+                </span>
               )}
             </button>
 
@@ -232,14 +253,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[120px]">
                         {currentUser.name}
                       </p>
-                      {currentUser.role === 'ADMIN' && (
+                      {currentUser.role === "ADMIN" && (
                         <span className="text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded-md">
                           Admin
                         </span>
                       )}
                     </div>
                     <p className="text-[10px] text-slate-500 leading-tight truncate max-w-[120px]">
-                      {currentUser.companyName || (currentUser.role === 'ADMIN' ? 'Direction MLIMA' : 'Compte Pro')}
+                      {currentUser.companyName ||
+                        (currentUser.role === "ADMIN"
+                          ? "Direction MLIMA"
+                          : "Compte Pro")}
                     </p>
                   </div>
 
@@ -263,8 +287,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</p>
-                          <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {currentUser.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {currentUser.email}
+                          </p>
                           <div className="flex items-center gap-1 mt-1">
                             <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
                               ● Rôle: {currentUser.role}
@@ -276,7 +304,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <div className="py-1">
                       {/* Accès Admin si rôle ADMIN */}
-                      {currentUser.role === 'ADMIN' && (
+                      {currentUser.role === "ADMIN" && (
                         <button
                           onClick={() => {
                             setUserDropdownOpen(false);
@@ -286,7 +314,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         >
                           <span className="flex items-center gap-2.5">
                             <LayoutDashboard className="w-4 h-4 text-amber-700" />
-                            <span>{isAdminMode ? 'Revenir à la boutique' : 'Tableau de bord Admin (Back-Office)'}</span>
+                            <span>
+                              {isAdminMode
+                                ? "Revenir à la boutique"
+                                : "Tableau de bord Admin (Back-Office)"}
+                            </span>
                           </span>
                           <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded">
                             PRO
@@ -323,7 +355,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <span>Profil de facturation</span>
                       </button>
 
-                      {currentUser.role === 'ADMIN' && (
+                      {currentUser.role === "ADMIN" && (
                         <>
                           <button
                             onClick={() => {
@@ -338,7 +370,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                             </span>
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           </button>
-
                         </>
                       )}
                     </div>
@@ -361,13 +392,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => onOpenAuthModal('login')}
+                  onClick={() => onOpenAuthModal("login")}
                   className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-[#0A3B8C] hover:bg-slate-50 rounded-full transition-colors cursor-pointer"
                 >
                   Connexion
                 </button>
                 <button
-                  onClick={() => onOpenAuthModal('register')}
+                  onClick={() => onOpenAuthModal("register")}
                   className="px-4 py-2 text-xs font-bold text-white bg-[#0A3B8C] hover:bg-[#082e6d] rounded-full shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-1"
                 >
                   <span>Créer un compte</span>
@@ -382,7 +413,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="md:hidden p-2 rounded-full text-slate-600 hover:bg-slate-100 cursor-pointer"
               aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -399,7 +434,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             />
             {searchQuery ? (
               <button
-                onClick={() => onSearchChange('')}
+                onClick={() => onSearchChange("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
               >
                 <X className="w-3.5 h-3.5" />
@@ -417,11 +452,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Pills Catégories avec scroll doux */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             <button
-              onClick={() => onSelectCategory('all')}
+              onClick={() => onSelectCategory("all")}
               className={`px-3.5 py-1.5  font-semibold transition-all cursor-pointer text-xs ${
-                selectedCategory === 'all'
-                  ? 'text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                selectedCategory === "all"
+                  ? "text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               Tous les produits
@@ -433,8 +468,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => onSelectCategory(cat.id)}
                 className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all cursor-pointer text-xs ${
                   selectedCategory === cat.id
-                    ? 'text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? "text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {cat.name}
@@ -453,11 +488,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             </p>
             <button
               onClick={() => {
-                onSelectCategory('all');
+                onSelectCategory("all");
                 setMobileMenuOpen(false);
               }}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                selectedCategory === 'all' ? 'bg-[#0A3B8C] text-white' : 'text-slate-700 hover:bg-slate-100'
+                selectedCategory === "all"
+                  ? "bg-[#0A3B8C] text-white"
+                  : "text-slate-700 hover:bg-slate-100"
               }`}
             >
               Tous les rayons
@@ -470,7 +507,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                 }}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium cursor-pointer ${
-                  selectedCategory === cat.id ? 'bg-[#0A3B8C] text-white' : 'text-slate-700 hover:bg-slate-100'
+                  selectedCategory === cat.id
+                    ? "bg-[#0A3B8C] text-white"
+                    : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 {cat.name}
@@ -483,9 +522,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <>
                 <div className="px-3 py-2 bg-slate-50 rounded-xl text-xs">
                   <p className="font-bold text-slate-900">{currentUser.name}</p>
-                  <p className="text-slate-500 text-[11px]">{currentUser.email}</p>
+                  <p className="text-slate-500 text-[11px]">
+                    {currentUser.email}
+                  </p>
                 </div>
-                {currentUser.role === 'ADMIN' && (
+                {currentUser.role === "ADMIN" && (
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
@@ -493,7 +534,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                     className="w-full py-2.5 px-3.5 rounded-xl bg-amber-50 text-amber-900 font-bold text-xs flex items-center justify-between cursor-pointer"
                   >
-                    <span>{isAdminMode ? 'Boutique' : 'Back-Office Admin'}</span>
+                    <span>
+                      {isAdminMode ? "Boutique" : "Back-Office Admin"}
+                    </span>
                     <LayoutDashboard className="w-4 h-4 text-amber-700" />
                   </button>
                 )}
@@ -507,7 +550,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <User className="w-4 h-4" />
                   <span>Profil de facturation</span>
                 </button>
-                {currentUser.role === 'ADMIN' && (
+                {currentUser.role === "ADMIN" && (
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
@@ -540,7 +583,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    onOpenAuthModal('login');
+                    onOpenAuthModal("login");
                   }}
                   className="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-800 font-semibold text-xs text-center cursor-pointer"
                 >
@@ -549,7 +592,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    onOpenAuthModal('register');
+                    onOpenAuthModal("register");
                   }}
                   className="py-2.5 px-3 rounded-xl bg-[#0A3B8C] text-white font-bold text-xs text-center cursor-pointer shadow-xs"
                 >

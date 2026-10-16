@@ -27,19 +27,21 @@ await check('public product catalog', async () => {
 });
 
 for (const path of [
-  '/api/profile',
-  '/api/cart',
-  '/api/orders',
-  '/api/admin/orders',
-  '/api/admin/products',
-  '/api/admin/categories',
-  '/api/admin/users',
-  '/api/admin/settings',
+  "/api/profile",
+  "/api/notifications",
+  "/api/cart",
+  "/api/orders",
+  "/api/admin/orders",
+  "/api/admin/products",
+  "/api/admin/categories",
+  "/api/admin/users",
+  "/api/admin/settings",
 ]) {
   await check(`${path} rejects anonymous access`, async () => {
     const response = await fetch(`${apiUrl}${path}`);
-    if (response.status !== 401) throw new Error(`expected 401, received ${response.status}`);
-    return '401';
+    if (response.status !== 401)
+      throw new Error(`expected 401, received ${response.status}`);
+    return "401";
   });
 }
 

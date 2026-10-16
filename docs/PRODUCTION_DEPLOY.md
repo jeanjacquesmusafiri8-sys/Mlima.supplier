@@ -40,6 +40,8 @@ Utilisez une base Neon dédiée à la production, différente de celle de dével
 
 La migration `20261017000000_remove_delivery_addresses` supprime les colonnes historiques d’adresses et de localisation; les valeurs existantes de ces colonnes seront perdues lorsqu’elle sera appliquée.
 
+La migration additive `20261018000000_user_notifications` crée le stockage des notifications in-app par utilisateur. Avant de déployer cette version de l’API, sauvegardez la base et vérifiez toutes les migrations en attente : `npx prisma migrate deploy` appliquera aussi la migration de suppression d’adresses ci-dessus si elle n’a pas encore été exécutée. Le catalogue est lu depuis PostgreSQL, rafraîchi périodiquement dans les onglets ouverts, et les créations/modifications/suppressions de produits génèrent des notifications visibles dans le menu du compte; aucun e-mail de masse n’est envoyé.
+
 ## OAuth Google
 
 Dans les identifiants OAuth Google, configurez :
