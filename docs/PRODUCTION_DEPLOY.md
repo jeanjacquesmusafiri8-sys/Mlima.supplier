@@ -3,9 +3,9 @@
 Le site utilise les sous-domaines gratuits fournis par les plateformes :
 
 - Frontend Vercel : `https://mlima-supplier.vercel.app`
-- API Render : `https://mlima-supplier-api.onrender.com`
+- API Render : `https://mlima-supplier.onrender.com`
 
-Le nom du projet Vercel doit être `mlima-supplier` et celui du service Render `mlima-supplier-api` pour obtenir exactement ces URL. Si une plateforme attribue un autre sous-domaine, remplacez les URL correspondantes dans `vercel.json` et dans `render.yaml`, puis redéployez.
+Le nom du projet Vercel et le service Render actif sont `mlima-supplier`. Si une plateforme attribue un autre sous-domaine, remplacez les URL correspondantes dans `vercel.json` et dans `render.yaml`, puis redéployez.
 
 ## Vercel
 
@@ -45,7 +45,7 @@ La migration `20261017000000_remove_delivery_addresses` supprime les colonnes hi
 Dans les identifiants OAuth Google, configurez :
 
 - Origine JavaScript autorisée : `https://mlima-supplier.vercel.app`
-- URI de redirection autorisée : `https://mlima-supplier-api.onrender.com/api/auth/callback/google`
+- URI de redirection autorisée : `https://mlima-supplier.onrender.com/api/auth/callback/google`
 
 Le callback appartient au domaine API Render, car Better Auth y est hébergé. Les URL doivent correspondre exactement aux valeurs publiques des deux plateformes.
 
@@ -54,7 +54,7 @@ Le callback appartient au domaine API Render, car Better Auth y est hébergé. L
 Attendez que le health check Render soit sain, puis exécutez depuis PowerShell :
 
 ```powershell
-$env:API_URL = 'https://mlima-supplier-api.onrender.com'
+$env:API_URL = 'https://mlima-supplier.onrender.com'
 $env:APP_URL = 'https://mlima-supplier.vercel.app'
 npm run test:local
 ```

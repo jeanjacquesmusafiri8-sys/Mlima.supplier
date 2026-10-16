@@ -15,7 +15,13 @@ const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 if (configuredAdminEmail && configuredAdminEmail !== superAdminEmail) {
   console.warn('ADMIN_EMAIL differs from the fixed MLIMA Super Admin address and will not be used for role assignment.');
 }
-const authBaseURL = process.env.BETTER_AUTH_URL?.trim() || 'http://localhost:3001';
+const configuredAuthBaseURL = process.env.BETTER_AUTH_URL?.trim();
+if (process.env.NODE_ENV === "production" && !configuredAuthBaseURL) {
+  throw new Error(
+    "BETTER_AUTH_URL must be set to the public API URL in production.",
+  );
+}
+const authBaseURL = configuredAuthBaseURL || "http://localhost:3001";
 const configuredOrigins = [
   process.env.WEB_ORIGIN,
   process.env.APP_URL,

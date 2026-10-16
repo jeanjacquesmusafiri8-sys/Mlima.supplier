@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mlima-supplier-api
+    name: mlima-supplier
     runtime: node
     plan: starter
     region: frankfurt
@@ -15,7 +15,7 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://mlima-supplier-api.onrender.com
+        value: https://mlima-supplier.onrender.com
       - key: WEB_ORIGIN
         value: https://mlima-supplier.vercel.app
       - key: WEB_ORIGINS
