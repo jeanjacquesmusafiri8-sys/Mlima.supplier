@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 850" width="1000" height="850">
+  <!-- Fond transparent -->
+  <g id="Embleme-Montagnes">
+    <!-- Facette or / jaune gauche (#F7A814) -->
+    <path d="M140 500 L445 145 L480 205 L395 285 L445 350 L335 435 L260 460 Z" fill="#F7A814"/>
+    <polygon points="445,145 480,205 385,285 330,225" fill="#F7A814"/>
+    <path d="M140 500 L260 460 L180 505 Z" fill="#F7A814"/>
+
+    <!-- Sommet principal bleu marine (#002855) -->
+    <path d="M585 145 L805 490 L695 465 L585 260 L500 465 L465 305 L380 275 L335 435 L180 520 L330 430 L380 275 L465 305 L585 145 Z" fill="#002855"/>
+    <path d="M585 145 L805 490 L710 480 L585 270 L485 475 L465 305 Z" fill="#002855"/>
+    <polygon points="380,275 465,305 395,385 335,435" fill="#002855"/>
+
+    <!-- Ligne courbe dynamique inférieure (#002855) -->
+    <path d="M115 590 C280 520 660 480 875 555 C660 520 300 545 115 590 Z" fill="#002855"/>
+    <path d="M130 575 C310 505 680 475 875 555 C680 495 310 525 130 575 Z" fill="#002855"/>
+  </g>
+
+  <!-- Typographie officielle MLIMA -->
+  <text x="500" y="695" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="900" font-size="124" fill="#002855" letter-spacing="4">
+    MLIMA
+  </text>
+
+  <!-- Typographie officielle Supplier -->
+  <text x="500" y="775" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="58" fill="#F7A814" letter-spacing="1">
+    Supplier
+  </text>
+</svg>

@@ -1,0 +1,1 @@
+-- Orders and cart tables are included in the initial schema migration.

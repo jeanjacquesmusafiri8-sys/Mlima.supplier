@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+	--mlima-black: #0b0b0b;
+	--mlima-blue: #0a2540;
+	--mlima-orange: #ffb800;
+	--mlima-white: #ffffff;
+	--mlima-canvas: #f6f8fa;
+	--mlima-border: #dce3e9;
+	--mlima-error: #b42318;
+	color-scheme: light;
+}
+
+@theme inline {
+	--font-sans: "Inter", "Manrope", sans-serif;
+}
+
+html,
+body,
+#root {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--mlima-white);
+	color: var(--mlima-blue);
+	font-family: "Inter", "Manrope", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-family: "Manrope", "Inter", sans-serif;
+}
+
+::selection {
+	background: var(--mlima-orange);
+	color: var(--mlima-black);
+}
+
+:focus-visible {
+	outline: 2px solid var(--mlima-orange);
+	outline-offset: 2px;
+}

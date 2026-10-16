@@ -1,0 +1,6 @@
+{
+  "name": "MLIMA Supplier - Catalogue & E-Commerce B2B/B2C",
+  "description": "Plateforme e-commerce et vitrine de catalogue officielle de MLIMA Supplier (Bukavu, RDC) : appareils de communication & hospitaliers, pièces de rechange, hygiène, bureau et services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

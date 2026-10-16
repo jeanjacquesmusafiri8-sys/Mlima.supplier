@@ -1,0 +1,334 @@
+// =============================================================================
+// PRISMA SCHEMA - MLIMA SUPPLIER E-COMMERCE & B2B CATALOG
+// AVEC BETTER AUTH & GESTION DES RÔLES (ADMIN | CLIENT)
+// =============================================================================
+// Société : MLIMA Supplier (Bukavu, Sud-Kivu, RDC)
+// Base de données : PostgreSQL hébergé sur Neon
+// Authentification : Better Auth (Email/Mot de passe, Sessions, Rôles RBAC)
+// =============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS : RÔLES ET STATUTS
+// -----------------------------------------------------------------------------
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  ON_ORDER
+}
+
+enum QuoteStatus {
+  PENDING      // En attente
+  PROCESSING   // En cours d'analyse
+  SENT         // Devis transmis au client
+  ACCEPTED     // Validé / Commandé
+  REJECTED     // Refusé / Annulé
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
+// 1. BETTER AUTH - UTILISATEURS, SESSIONS, COMPTES ET VÉRIFICATIONS
+// -----------------------------------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(CLIENT)
+  phone         String?
+  companyName   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Better Auth Relations
+  sessions      Session[]
+  accounts      Account[]
+
+  // Business Relations
+  quoteRequests QuoteRequest[]
+  orders        Order[]
+  cartItems     CartItem[]
+  auditLogs     AuditLog[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String    // "credential" pour email/mot de passe, "google", etc.
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?   // Mot de passe hashé pour le provider email/password
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// -----------------------------------------------------------------------------
+// 2. CATÉGORIES ET SOUS-CATÉGORIES
+// -----------------------------------------------------------------------------
+model Category {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  icon        String?       // Nom d'icône Lucide (ex: 'Radio', 'Wrench', 'ShieldCheck')
+  order       Int           @default(0)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  subcategories Subcategory[]
+  products      Product[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  products    Product[]
+
+  @@unique([categoryId, slug])
+  @@map("subcategories")
+}
+
+// -----------------------------------------------------------------------------
+// 3. PRODUITS DU CATALOGUE MLIMA SUPPLIER
+// -----------------------------------------------------------------------------
+model Product {
+  id               String       @id @default(cuid())
+  sku              String       @unique // Référence interne MLIMA (ex: ML-APP-001)
+  name             String
+  slug             String       @unique
+  shortDesc        String?
+  description      String       @db.Text
+  specifications   Json?        // Fiche technique clé/valeur { "Puissance": "25W", "Norme": "CE" }
+  
+  // Tarification (Sensible - Masqué aux visiteurs non inscrits)
+  price            Decimal?     @db.Decimal(10, 2)
+  priceUSD         Decimal?     @db.Decimal(10, 2)
+  isQuoteOnly      Boolean      @default(false)
+  unit             String       @default("Pièce")
+  minOrderQuantity Int          @default(1)
+  
+  // Gestion des Stocks (Sensible - Quantité exacte masquée aux non-connectés)
+  stock            Int          @default(0)
+  stockQuantity    Int          @default(0)
+  stockStatus      StockStatus  @default(IN_STOCK)
+  
+  // Visibilité & Mise en avant
+  isFeatured       Boolean      @default(false)
+  isPublic         Boolean      @default(true)
+  isActive         Boolean      @default(true)
+  isNew            Boolean      @default(false)
+  
+  images           String[]     // URLs Cloudinary, S3 ou Supabase Storage
+  
+  categoryId       String
+  category         Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  
+  subcategoryId    String?
+  subcategory      Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  quoteItems       QuoteItem[]
+  cartItems        CartItem[]
+
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([isPublic])
+  @@index([stockStatus])
+  @@map("products")
+}
+
+// -----------------------------------------------------------------------------
+// 4. DEMANDES DE DEVIS & COMMANDES (QUOTE / ORDER)
+// -----------------------------------------------------------------------------
+model QuoteRequest {
+  id             String      @id @default(cuid())
+  quoteNumber    String      @unique // Ex: DEV-2026-0012
+  status         QuoteStatus @default(PENDING)
+  
+  clientName     String
+  clientEmail    String
+  clientPhone    String      // WhatsApp prioritaire en RDC
+  clientCompany  String?
+  notes          String?     @db.Text
+  
+  totalAmount    Decimal?    @db.Decimal(12, 2)
+  totalEstimated Decimal?    @db.Decimal(12, 2)
+  currency       String      @default("USD")
+  
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  items          QuoteItem[]
+  
+  internalNotes  String?     @db.Text
+  respondedAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@map("quote_requests")
+}
+
+model QuoteItem {
+  id             String       @id @default(cuid())
+  quoteRequestId String
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  
+  productId      String?
+  product        Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  productName    String
+  productSku     String?
+  quantity       Int          @default(1)
+  unitPriceUSD   Decimal?     @db.Decimal(10, 2)
+  notes          String?
+
+  @@map("quote_items")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("cart_items")
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  customerName  String
+  customerEmail String
+  customerPhone String
+  notes         String?     @db.Text
+  totalAmount   Decimal     @db.Decimal(12, 2)
+  currency      String      @default("USD")
+  status        OrderStatus @default(PENDING)
+  orderDetails  Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("orders")
+}
+
+// -----------------------------------------------------------------------------
+// 5. PARAMÈTRES DU SITE & COORDONNÉES CMS (ADMIN UNIQUEMENT)
+// -----------------------------------------------------------------------------
+model SiteSetting {
+  id             String   @id @default("default")
+  companyName    String   @default("MLIMA Supplier")
+  tagline        String   @default("Votre partenaire d'approvisionnement fiable en RDC")
+  heroTitle      String   @default("Fournisseur Général d'Équipements & Matériels de Qualité")
+  heroSubtitle   String   @default("Appareils professionnels, pièces de rechange, hygiène, matériel de bureau et services pour entreprises, ONG et particuliers.")
+  
+  emailPrimary   String   @default("mlimasupplier@gmail.com")
+  phonePrimary   String   @default("+243 993 163 742")
+  phoneSecondary String   @default("+243 848 474 077")
+  whatsappNumber String   @default("+243993163742")
+  
+  
+  rccm           String   @default("CD/BKV/RCCM/21-A-00077")
+  idNat          String   @default("22-G4701-N77955M")
+  nif            String   @default("A2604579Q")
+
+  bannerNotice   String?
+  isMaintenance  Boolean  @default(false)
+  
+  updatedAt      DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// -----------------------------------------------------------------------------
+// 6. JOURNAL D'AUDIT ADMIN
+// -----------------------------------------------------------------------------
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // ex: "PRODUCT_CREATED", "ROLE_UPDATED", "PRICE_CHANGED"
+  details   Json?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
