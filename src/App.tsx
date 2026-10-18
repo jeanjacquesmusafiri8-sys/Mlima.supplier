@@ -993,7 +993,7 @@ export default function App() {
   // INTERFACE COMPLÈTE : RÉVÉLÉE UNIQUEMENT APRÈS INSCRIPTION / CONNEXION
   // =========================================================================
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased selection:bg-[#0A3B8C] selection:text-white">
+    <div className="min-h-screen bg-slate-50/75 flex flex-col font-sans text-slate-800 antialiased selection:bg-[#0A3B8C] selection:text-white">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in slide-in-from-bottom-3 duration-200 border border-slate-800">

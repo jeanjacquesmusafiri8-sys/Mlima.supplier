@@ -41,8 +41,8 @@ export const PublicVisitorHome: React.FC<PublicVisitorHomeProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#0A2540] flex flex-col font-sans antialiased selection:bg-[#FFB800] selection:text-[#0B0B0B]">
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 transition-all">
+    <div className="min-h-screen bg-white/70 text-[#0A2540] flex flex-col font-sans antialiased selection:bg-[#FFB800] selection:text-[#0B0B0B]">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -98,8 +98,14 @@ export const PublicVisitorHome: React.FC<PublicVisitorHomeProps> = ({
         </div>
       </header>
 
-      <section id="accueil" className="bg-[#0A2540] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <section id="accueil" className="relative isolate overflow-hidden bg-[#0A2540] text-white">
+        <img
+          src="/mlima-company.jpg"
+          alt="Un membre de l’équipe MLIMA Supplier accompagne un client dans son magasin."
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#071b30]/95 via-[#071b30]/75 to-[#071b30]/35" />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <div className="max-w-3xl">
             <p className="text-white/80 text-xs font-bold uppercase tracking-[0.18em] mb-5">Fournisseur général · Bukavu, RDC</p>
             <h1 className="text-4xl sm:text-6xl font-black leading-[1.02]">Fourniture d’équipements <span className="text-white">et matériels</span></h1>
@@ -111,7 +117,7 @@ export const PublicVisitorHome: React.FC<PublicVisitorHomeProps> = ({
         </div>
       </section>
 
-      <section aria-label="Activités MLIMA Supplier" className="border-b border-slate-200 bg-white">
+      <section aria-label="Activités MLIMA Supplier" className="border-b border-slate-200 bg-white/85 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-semibold text-[#0A2540]">
           {['Appareils', 'Pièces de rechange', 'Hygiène', 'Autres services'].map((activity) => (
             <div key={activity} className="flex items-center justify-center gap-2"><span className="h-2 w-2 rounded-full bg-[#0A2540]" />{activity}</div>
@@ -119,7 +125,7 @@ export const PublicVisitorHome: React.FC<PublicVisitorHomeProps> = ({
         </div>
       </section>
 
-      <section id="rayons" className="py-16 bg-white border-b border-slate-200/80">
+      <section id="rayons" className="py-16 bg-white/85 backdrop-blur-sm border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-[#0A2540]">
@@ -163,7 +169,7 @@ export const PublicVisitorHome: React.FC<PublicVisitorHomeProps> = ({
       </section>
 
       {/* Galerie publique : consultation libre, authentification au panier/commande. */}
-      <section id="catalogue" className="py-16 bg-slate-50 border-b border-slate-200/80">
+      <section id="catalogue" className="py-16 bg-slate-50/85 backdrop-blur-sm border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
             <div>

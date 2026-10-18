@@ -23,7 +23,11 @@ body,
 
 body {
 	margin: 0;
-	background: var(--mlima-white);
+	background-color: var(--mlima-canvas);
+	background-image: linear-gradient(rgba(246, 248, 250, 0.78), rgba(246, 248, 250, 0.78)), url("/mlima-company.jpg");
+	background-position: center;
+	background-size: cover;
+	background-attachment: fixed;
 	color: var(--mlima-blue);
 	font-family: "Inter", "Manrope", sans-serif;
 }
