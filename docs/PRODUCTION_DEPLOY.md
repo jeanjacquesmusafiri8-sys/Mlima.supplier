@@ -30,6 +30,7 @@ Le nom du projet Vercel et le service Render actif sont `mlima-supplier`. Si une
    - `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` : identifiants OAuth Google.
    - `RESEND_API_KEY` et `MAIL_FROM` : clé Resend et adresse d’envoi dont le domaine est vérifié.
    - `ADMIN_WHATSAPP_NUMBER` : numéro WhatsApp de l’administrateur, au format international.
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` et `CLOUDINARY_API_SECRET` : identifiants Cloudinary côté Render pour téléverser les images locales d’un import ZIP. Ces trois variables sont facultatives si les fichiers Excel/CSV contiennent uniquement des URLs d’images. Ne placez jamais ces secrets dans Vercel ni dans une variable `VITE_*`.
 5. Pour les notifications WhatsApp Cloud automatiques, ajoutez aussi `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_NUMBER` et `WHATSAPP_ADMIN_TEMPLATE`. `WHATSAPP_TEMPLATE_LANGUAGE` (défaut `fr`) et `WHATSAPP_GRAPH_API_VERSION` (défaut `v23.0`) sont facultatifs. Sans ces identifiants, le lien WhatsApp reste disponible, mais aucun message Cloud n’est envoyé.
 
 N’ajoutez jamais ces secrets dans Vercel, dans le dépôt ou dans une variable `VITE_*`. Render fournit automatiquement `PORT`; ne définissez pas `API_PORT` en production.
@@ -41,6 +42,10 @@ Utilisez une base Neon dédiée à la production, différente de celle de dével
 La migration `20261017000000_remove_delivery_addresses` supprime les colonnes historiques d’adresses et de localisation; les valeurs existantes de ces colonnes seront perdues lorsqu’elle sera appliquée.
 
 La migration additive `20261018000000_user_notifications` crée le stockage des notifications in-app par utilisateur. Avant de déployer cette version de l’API, sauvegardez la base et vérifiez toutes les migrations en attente : `npx prisma migrate deploy` appliquera aussi la migration de suppression d’adresses ci-dessus si elle n’a pas encore été exécutée. Le catalogue est lu depuis PostgreSQL, rafraîchi périodiquement dans les onglets ouverts, et les créations/modifications/suppressions de produits génèrent des notifications visibles dans le menu du compte; aucun e-mail de masse n’est envoyé.
+
+## Import de produits et images
+
+Dans l’administration du catalogue, le modèle Excel fournit les colonnes prises en charge par le formulaire et les catégories/sous-catégories actuellement enregistrées. Les images distantes doivent être des URLs HTTP(S), séparées par `|`. Pour les images locales, créez un ZIP contenant un seul fichier `.xlsx` ou `.csv`, ainsi que les images nommées selon le SKU, par exemple `ML-APP-001__01.jpg`, `ML-APP-001__02.png`. Les images locales sont contrôlées puis téléversées vers Cloudinary au moment de confirmer l’import; leurs URLs sécurisées sont enregistrées avec le produit. Configurez les trois variables Cloudinary dans Render pour utiliser cette option. L’import Excel/CSV et les URLs d’images ne nécessitent pas de configuration Cloudinary.
 
 ## OAuth Google
 

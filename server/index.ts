@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createHash } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
@@ -43,6 +44,10 @@ app.use(cors({
   credentials: true,
 }));
 app.all('/api/auth/*', toNodeHandler(auth));
+app.use(
+  '/api/admin/products/import',
+  express.json({ limit: '20mb' }),
+);
 app.use(express.json({ limit: '1mb' }));
 
 async function getVerifiedUser(request: express.Request) {
@@ -695,6 +700,224 @@ app.get("/api/admin/products", async (request, response) => {
       .json({ error: "Impossible de charger le catalogue admin." });
   }
 });
+
+app.post("/api/admin/products/import", async (request, response) => {
+  if (!(await requireAdmin(request, response))) return;
+  const parsed = z
+    .object({
+      products: z.array(adminProductSchema).min(1).max(500),
+    })
+    .strict()
+    .safeParse(request.body);
+  if (!parsed.success) {
+    response.status(400).json({ error: "Les lignes de produits importées sont invalides." });
+    return;
+  }
+
+  const products = parsed.data.products;
+  const skuCounts = new Map<string, number>();
+  for (const product of products) {
+    const key = product.sku.toLowerCase();
+    skuCounts.set(key, (skuCounts.get(key) || 0) + 1);
+  }
+  const duplicateSkus = [...skuCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([sku]) => sku);
+  if (duplicateSkus.length) {
+    response.status(409).json({
+      error: `Références répétées dans le fichier : ${duplicateSkus.join(", ")}.`,
+    });
+    return;
+  }
+
+  try {
+    const existingProducts = await prisma.product.findMany({
+      where: {
+        OR: products.map(({ sku }) => ({
+          sku: { equals: sku, mode: "insensitive" as const },
+        })),
+      },
+      select: { sku: true },
+    });
+    if (existingProducts.length) {
+      response.status(409).json({
+        error: `Ces références SKU existent déjà : ${existingProducts.map(({ sku }) => sku).join(", ")}.`,
+      });
+      return;
+    }
+
+    const categoryIds = [...new Set(products.map(({ categoryId }) => categoryId))];
+    const subcategoryIds = [
+      ...new Set(
+        products.flatMap((product) =>
+          product.subcategoryId ? [product.subcategoryId] : [],
+        ),
+      ),
+    ];
+    const [categories, subcategories] = await Promise.all([
+      prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true },
+      }),
+      prisma.subcategory.findMany({
+        where: { id: { in: subcategoryIds } },
+        select: { id: true, categoryId: true },
+      }),
+    ]);
+    const validCategoryIds = new Set(categories.map(({ id }) => id));
+    const validSubcategories = new Map(
+      subcategories.map(({ id, categoryId }) => [id, categoryId]),
+    );
+    const invalidRelations = products.some(
+      (product) =>
+        !validCategoryIds.has(product.categoryId) ||
+        (product.subcategoryId &&
+          validSubcategories.get(product.subcategoryId) !== product.categoryId),
+    );
+    if (invalidRelations) {
+      response.status(400).json({
+        error: "Une catégorie ou sous-catégorie n’existe plus ou ne correspond pas.",
+      });
+      return;
+    }
+
+    const importedProducts = await prisma.$transaction(
+      products.map((data) =>
+        prisma.product.create({
+          data: {
+            ...data,
+            price: data.priceUSD ?? null,
+            stock: data.stockQuantity,
+            specifications: data.specifications as
+              | Prisma.InputJsonValue
+              | undefined,
+          },
+        }),
+      ),
+    );
+    await notifyRegisteredUsers(
+      "Nouveaux produits au catalogue",
+      `${importedProducts.length} nouveau(x) produit(s) ont été ajoutés au catalogue MLIMA Supplier.`,
+    );
+    response.status(201).json({
+      products: importedProducts.map((product) => ({
+        ...product,
+        priceUSD: product.priceUSD === null ? null : Number(product.priceUSD),
+      })),
+    });
+  } catch (error) {
+    console.error("Failed to import products:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      response.status(409).json({
+        error: "Une référence ou un identifiant de produit existe déjà.",
+      });
+      return;
+    }
+    response.status(400).json({
+      error: "Importation annulée. Vérifiez les références, les catégories et les données du fichier.",
+    });
+  }
+});
+
+app.post(
+  "/api/admin/product-import/images",
+  express.raw({ type: "image/*", limit: "8mb" }),
+  async (request, response) => {
+    if (!(await requireAdmin(request, response))) return;
+    const file = Buffer.isBuffer(request.body) ? request.body : null;
+    const mimeType = request.get("content-type")?.split(";")[0].toLowerCase();
+    const supportedMimeTypes = new Set([
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ]);
+    if (!file?.length || !mimeType || !supportedMimeTypes.has(mimeType)) {
+      response.status(400).json({ error: "Fichier image vide ou format non pris en charge." });
+      return;
+    }
+    if (file.length > 8 * 1024 * 1024) {
+      response.status(413).json({ error: "Une image ne peut pas dépasser 8 Mo." });
+      return;
+    }
+
+    const isValidImage =
+      (mimeType === "image/jpeg" &&
+        file[0] === 0xff &&
+        file[1] === 0xd8 &&
+        file[file.length - 2] === 0xff &&
+        file[file.length - 1] === 0xd9) ||
+      (mimeType === "image/png" &&
+        file.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) ||
+      (mimeType === "image/gif" &&
+        ["GIF87a", "GIF89a"].includes(file.subarray(0, 6).toString())) ||
+      (mimeType === "image/webp" &&
+        file.subarray(0, 4).toString() === "RIFF" &&
+        file.subarray(8, 12).toString() === "WEBP");
+    if (!isValidImage) {
+      response.status(400).json({ error: "Le contenu du fichier ne correspond pas à son format image." });
+      return;
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+    const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+    const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+    if (!cloudName || !apiKey || !apiSecret) {
+      response.status(503).json({
+        error: "Le stockage des images locales n’est pas configuré. Configurez Cloudinary ou utilisez des URLs d’images dans le fichier.",
+      });
+      return;
+    }
+
+    try {
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const signature = createHash("sha1")
+        .update(`folder=mlima-products&timestamp=${timestamp}${apiSecret}`)
+        .digest("hex");
+      const form = new FormData();
+      form.set("api_key", apiKey);
+      form.set("timestamp", timestamp);
+      form.set("folder", "mlima-products");
+      form.set("signature", signature);
+      form.set(
+        "file",
+        new Blob([Uint8Array.from(file)], { type: mimeType }),
+        "product-image",
+      );
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
+        {
+          method: "POST",
+          body: form,
+          signal: AbortSignal.timeout(30000),
+        },
+      );
+      const uploaded = (await uploadResponse.json()) as {
+        secure_url?: unknown;
+      };
+      if (
+        !uploadResponse.ok ||
+        typeof uploaded.secure_url !== "string" ||
+        !uploaded.secure_url.startsWith("https://")
+      ) {
+        console.error("Cloudinary image upload failed:", uploadResponse.status);
+        response.status(502).json({
+          error: "Le stockage d’images a refusé le téléversement. Vérifiez la configuration Cloudinary.",
+        });
+        return;
+      }
+      response.status(201).json({ url: uploaded.secure_url });
+    } catch (error) {
+      console.error("Failed to upload imported product image:", error);
+      response.status(502).json({
+        error: "Impossible de téléverser l’image vers le stockage configuré.",
+      });
+    }
+  },
+);
 
 app.post("/api/admin/products", async (request, response) => {
   if (!(await requireAdmin(request, response))) return;

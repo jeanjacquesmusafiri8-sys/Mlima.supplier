@@ -563,6 +563,74 @@ export default function App() {
     }
   };
 
+  const handleImportProducts = async (productsToImport: Partial<Product>[]) => {
+    const products = productsToImport.map((productData) => ({
+      sku: productData.sku,
+      name: productData.name,
+      slug: productData.slug,
+      shortDesc: productData.shortDesc || "",
+      description: productData.description || "",
+      specifications: productData.specifications || {},
+      priceUSD: productData.priceUSD ?? null,
+      isQuoteOnly: productData.isQuoteOnly ?? false,
+      unit: productData.unit || "Pièce",
+      minOrderQuantity: productData.minOrderQuantity ?? 1,
+      stockQuantity: productData.stockQuantity ?? 0,
+      stockStatus: productData.stockStatus || "IN_STOCK",
+      isFeatured: productData.isFeatured ?? false,
+      isPublic: productData.isPublic ?? true,
+      isActive: productData.isActive ?? true,
+      isNew: productData.isNew ?? false,
+      images: productData.images || [],
+      categoryId: productData.categoryId,
+      subcategoryId: productData.subcategoryId || null,
+    }));
+    try {
+      const response = await fetch("/api/admin/products/import", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products }),
+      });
+      const responseText = await response.text();
+      let result: { error?: string; products?: Product[] };
+      try {
+        result = JSON.parse(responseText) as {
+          error?: string;
+          products?: Product[];
+        };
+      } catch {
+        throw new Error(
+          response.status === 413
+            ? "Le fichier dépasse la taille maximale acceptée par le serveur."
+            : `Le serveur a retourné une réponse invalide (${response.status}).`,
+        );
+      }
+      if (!response.ok) {
+        throw new Error(result.error || "Impossible d’importer les produits.");
+      }
+      if (!Array.isArray(result.products)) {
+        throw new Error("La réponse du serveur ne contient pas les produits importés.");
+      }
+      const savedProducts = result.products.map((product) => ({
+        ...product,
+        priceUSD:
+          product.priceUSD === null ? null : Number(product.priceUSD),
+      }));
+      setProducts((previous) => [...savedProducts, ...previous]);
+      showToast(
+        `${savedProducts.length} produit(s) importé(s) dans le catalogue.`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Impossible d’importer les produits.";
+      showToast(message);
+      throw new Error(message);
+    }
+  };
+
   const handleDeleteProduct = async (productId: string) => {
     try {
       const response = await fetch(`/api/admin/products/${productId}`, {
@@ -1126,6 +1194,7 @@ export default function App() {
               <AdminProducts
                 products={products}
                 categories={categories}
+                onImportProducts={handleImportProducts}
                 onOpenCreate={() => {
                   setEditingProduct(null);
                   setIsProductFormOpen(true);

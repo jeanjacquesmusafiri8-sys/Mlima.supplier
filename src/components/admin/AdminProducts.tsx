@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { lazy, Suspense } from 'react';
 import {
   Plus,
   Search,
@@ -10,10 +11,17 @@ import {
   AlertTriangle,
   Clock,
   Eye,
+  FileSpreadsheet,
   SlidersHorizontal,
   Tag
 } from 'lucide-react';
 import { Product, Category, StockStatus } from '../../types';
+
+const ProductImportModal = lazy(() =>
+  import('./ProductImportModal').then((module) => ({
+    default: module.ProductImportModal,
+  })),
+);
 
 interface AdminProductsProps {
   products: Product[];
@@ -23,6 +31,7 @@ interface AdminProductsProps {
   onDeleteProduct: (productId: string) => void;
   onToggleFeatured: (productId: string) => void;
   onViewProductDetails: (product: Product) => void;
+  onImportProducts: (products: Partial<Product>[]) => Promise<void>;
 }
 
 export const AdminProducts: React.FC<AdminProductsProps> = ({
@@ -33,10 +42,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   onDeleteProduct,
   onToggleFeatured,
   onViewProductDetails,
+  onImportProducts,
 }) => {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStock, setFilterStock] = useState('all');
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // Filter products
   const filteredProducts = products.filter((p) => {
@@ -64,14 +75,41 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onOpenCreate}
-          className="flex items-center justify-center gap-1.5 bg-[#0A3B8C] hover:bg-[#082e6d] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 text-amber-400" />
-          <span>Ajouter un Produit</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="flex items-center justify-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Importer des produits Excel</span>
+          </button>
+          <button
+            onClick={onOpenCreate}
+            className="flex items-center justify-center gap-1.5 bg-[#0A3B8C] hover:bg-[#082e6d] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-amber-400" />
+            <span>Ajouter un Produit</span>
+          </button>
+        </div>
       </div>
+
+      {isImportOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 text-sm font-semibold text-white">
+              Chargement de l’importateur Excel…
+            </div>
+          }
+        >
+          <ProductImportModal
+            isOpen={isImportOpen}
+            categories={categories}
+            products={products}
+            onClose={() => setIsImportOpen(false)}
+            onImportProducts={onImportProducts}
+          />
+        </Suspense>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center gap-3">
