@@ -654,6 +654,36 @@ export default function App() {
     }
   };
 
+  const handleDeleteProducts = async (productIds: string[]) => {
+    try {
+      const response = await fetch("/api/admin/products/bulk-delete", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Impossible de supprimer ces produits.");
+      }
+      const deletedIds = new Set<string>(result.deletedIds || []);
+      setProducts((previous) =>
+        previous.filter((product) => !deletedIds.has(product.id)),
+      );
+      showToast(
+        `${result.deletedCount} produit${result.deletedCount > 1 ? "s supprimés" : " supprimé"} du catalogue.`,
+      );
+      return result.deletedCount as number;
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Impossible de supprimer ces produits.",
+      );
+      return 0;
+    }
+  };
+
   const handleToggleFeatured = async (productId: string) => {
     const product = products.find((item) => item.id === productId);
     if (!product) return;
@@ -1204,6 +1234,7 @@ export default function App() {
                   setIsProductFormOpen(true);
                 }}
                 onDeleteProduct={handleDeleteProduct}
+                onDeleteProducts={handleDeleteProducts}
                 onToggleFeatured={handleToggleFeatured}
                 onViewProductDetails={(prod) => setSelectedProductDetails(prod)}
               />

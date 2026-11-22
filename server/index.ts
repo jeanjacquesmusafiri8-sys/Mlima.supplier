@@ -992,6 +992,57 @@ app.put("/api/admin/products/:id", async (request, response) => {
   }
 });
 
+app.post("/api/admin/products/bulk-delete", async (request, response) => {
+  if (!(await requireAdmin(request, response))) return;
+  const parsed = z
+    .object({
+      productIds: z
+        .array(z.string().trim().min(1).max(100))
+        .min(1)
+        .max(500),
+    })
+    .strict()
+    .safeParse(request.body);
+  if (!parsed.success) {
+    response.status(400).json({
+      error: "Sélection de produits invalide.",
+    });
+    return;
+  }
+
+  const productIds = [...new Set(parsed.data.productIds)];
+  try {
+    const result = await prisma.$transaction(async (transaction) => {
+      const products = await transaction.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true },
+      });
+      if (products.length === 0) return { deletedIds: [], deletedCount: 0 };
+
+      const deleted = await transaction.product.deleteMany({
+        where: { id: { in: products.map((product) => product.id) } },
+      });
+      const deletedIds = deleted.count === products.length
+        ? products.map((product) => product.id)
+        : [];
+      return { deletedIds, deletedCount: deleted.count };
+    });
+
+    if (result.deletedCount > 0) {
+      await notifyRegisteredUsers(
+        "Produits retirés du catalogue",
+        `${result.deletedCount} produit${result.deletedCount > 1 ? "s ont" : " a"} été retiré${result.deletedCount > 1 ? "s" : ""} du catalogue.`,
+      );
+    }
+    response.json(result);
+  } catch (error) {
+    console.error("Failed to bulk-delete products:", error);
+    response.status(409).json({
+      error: "Certains produits ne peuvent pas être supprimés.",
+    });
+  }
+});
+
 app.delete("/api/admin/products/:id", async (request, response) => {
   if (!(await requireAdmin(request, response))) return;
   try {

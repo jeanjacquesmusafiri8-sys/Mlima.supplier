@@ -9,20 +9,28 @@ interface InstallPromptEvent extends Event {
 export const PwaInstallPrompt: React.FC = () => {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [installError, setInstallError] = useState(false);
 
   useEffect(() => {
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroidMobile = /Android/i.test(navigator.userAgent);
     setIsIOS(isAppleMobile && !isInstalled);
+    setIsAndroid(isAndroidMobile && !isInstalled);
     setIsDismissed(sessionStorage.getItem('mlima-pwa-prompt-dismissed') === 'true');
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event as InstallPromptEvent);
     };
-    const handleAppInstalled = () => setInstallPrompt(null);
+    const handleAppInstalled = () => {
+      setInstallPrompt(null);
+      setIsIOS(false);
+      setIsAndroid(false);
+    };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -39,12 +47,22 @@ export const PwaInstallPrompt: React.FC = () => {
 
   const install = async () => {
     if (!installPrompt) return;
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === 'accepted') setInstallPrompt(null);
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstallPrompt(null);
+        setIsAndroid(false);
+      }
+    } catch (error) {
+      console.error('MLIMA PWA installation prompt failed:', error);
+      setInstallError(true);
+    } finally {
+      setInstallPrompt(null);
+    }
   };
 
-  if (isDismissed || (!installPrompt && !isIOS)) return null;
+  if (isDismissed || (!installPrompt && !isIOS && !isAndroid)) return null;
 
   return (
     <aside
@@ -61,7 +79,11 @@ export const PwaInstallPrompt: React.FC = () => {
         <p className="mt-1 text-xs leading-relaxed text-white/90">
           {isIOS && !installPrompt
             ? "Sur iPhone ou iPad : touchez Partager, puis « Sur l’écran d’accueil »."
-            : "Ajoutez l’application à votre écran d’accueil pour retrouver le catalogue plus rapidement."}
+            : isAndroid && !installPrompt && !installError
+              ? "Dans le menu ⋮ de Chrome ou Samsung Internet, choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil »."
+              : installError
+                ? "L’installation n’a pas abouti. Réessayez depuis le menu de votre navigateur."
+                : "Ajoutez l’application à votre écran d’accueil pour retrouver le catalogue plus rapidement."}
         </p>
       </div>
       {installPrompt && (

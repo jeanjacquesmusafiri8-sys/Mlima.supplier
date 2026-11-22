@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { lazy, Suspense } from 'react';
 import {
   Plus,
@@ -29,6 +29,7 @@ interface AdminProductsProps {
   onOpenCreate: () => void;
   onEditProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
+  onDeleteProducts: (productIds: string[]) => Promise<number>;
   onToggleFeatured: (productId: string) => void;
   onViewProductDetails: (product: Product) => void;
   onImportProducts: (products: Partial<Product>[]) => Promise<void>;
@@ -40,6 +41,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   onOpenCreate,
   onEditProduct,
   onDeleteProduct,
+  onDeleteProducts,
   onToggleFeatured,
   onViewProductDetails,
   onImportProducts,
@@ -48,6 +50,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStock, setFilterStock] = useState('all');
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filter products
   const filteredProducts = products.filter((p) => {
@@ -61,6 +65,55 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
 
     return matchesSearch && matchesCategory && matchesStock;
   });
+
+  useEffect(() => {
+    setSelectedIds((previous) =>
+      new Set([...previous].filter((id) => products.some((product) => product.id === id))),
+    );
+  }, [products]);
+
+  const visibleIds = filteredProducts.map((product) => product.id);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+
+  const toggleSelection = (productId: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    const ids = [...selectedIds];
+    if (
+      ids.length === 0 ||
+      !confirm(
+        `Confirmez-vous la suppression de ${ids.length} produit${ids.length > 1 ? 's' : ''} ? Cette action est irréversible.`,
+      )
+    ) return;
+
+    setIsDeleting(true);
+    try {
+      const deletedCount = await onDeleteProducts(ids);
+      setSelectedIds(new Set());
+      if (deletedCount === 0) {
+        alert('Aucun produit n’a été supprimé.');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -155,12 +208,49 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-3">
+          <span className="text-xs font-bold text-rose-800">
+            {selectedIds.size} produit{selectedIds.size > 1 ? 's sélectionnés' : ' sélectionné'}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={isDeleting}
+              className="rounded-lg px-3 py-2 text-xs font-bold text-slate-600 hover:bg-white disabled:opacity-50"
+            >
+              Annuler la sélection
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? 'Suppression…' : 'Supprimer la sélection'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Products Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase text-[10px] font-bold">
               <tr>
+                <th className="w-11 py-3 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label="Sélectionner tous les produits affichés"
+                    checked={allVisibleSelected}
+                    onChange={toggleVisibleSelection}
+                    disabled={isDeleting || visibleIds.length === 0}
+                    className="h-4 w-4 accent-rose-600"
+                  />
+                </th>
                 <th className="py-3 px-4">Article</th>
                 <th className="py-3 px-3">Catégorie</th>
                 <th className="py-3 px-3">Prix Unit. (USD)</th>
@@ -172,7 +262,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     Aucun produit trouvé pour cette sélection.
                   </td>
                 </tr>
@@ -186,6 +276,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
 
                   return (
                     <tr key={prod.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-3 text-center">
+                        <input
+                          type="checkbox"
+                          aria-label={`Sélectionner ${prod.name}`}
+                          checked={selectedIds.has(prod.id)}
+                          onChange={() => toggleSelection(prod.id)}
+                          disabled={isDeleting}
+                          className="h-4 w-4 accent-rose-600"
+                        />
+                      </td>
                       {/* Product Thumbnail & Name */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
